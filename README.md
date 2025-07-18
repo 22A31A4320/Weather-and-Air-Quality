@@ -1,3 +1,4 @@
+Weather & Air Quality Analyzer — Detailed Project Documentation
 📌 1. Introduction
 In recent years, air pollution has become one of the most pressing environmental and public health issues worldwide. Poor air quality is responsible for various health conditions, ranging from mild irritation and respiratory discomfort to severe diseases like asthma, cardiovascular issues, and even cancer. The quality of the air we breathe directly impacts our well-being, productivity, and life expectancy. Therefore, it has become vital to develop simple, accessible tools that allow individuals and communities to monitor air quality and weather conditions in real-time.
 
