@@ -1,21 +1,3 @@
-code cell 1 :
-# Install dependencies
-!pip install streamlit -q
-!pip install pyngrok -q
-!pip install plotly -q
-# Create streamlit config to disable headless and CORS restrictions
-!mkdir -p ~/.streamlit
-!echo "[server]\nheadless = true\nenableCORS = false\nport = 8501" > ~/.streamlit/config.toml
-
-code cell 2:
-!pip install streamlit -q
-!npm install -g localtunnel
-!wget -q -O - ipv4.icanhazip.com
-! streamlit run app.py & npx localtunnel --port 8501
-
-app.py code 
-
-
 import requests
 import streamlit as st
 import pandas as pd
