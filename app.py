@@ -1,20 +1,22 @@
-import requests
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import requests
 
+# App Configuration
 st.set_page_config(page_title="Weather & Air Quality Analyzer", layout="wide")
 st.title("🌍 Weather and Air Pollution Health Risk Analyzer")
 
+# API Key
 API_KEY = '7040ea904442a45d6950ba584410ce59'
 
-# Ideal values for safety
+# Ideal pollutant values (µg/m³)
 ideal_values = {
     'pm2_5': 15, 'pm10': 50, 'no2': 40,
     'co': 4400, 'o3': 100, 'so2': 20, 'nh3': 25
 }
 
-# Health effects of pollutants
+# Health effects for pollutants
 health_effects = {
     'pm2_5': 'Lung/eye irritation, cancer risk, asthma trigger',
     'pm10': 'Coughing, dryness, lung damage',
@@ -36,7 +38,7 @@ full_names = {
     'nh3': 'Ammonia (NH₃)'
 }
 
-# AQI Labels
+# AQI Labels and Descriptions
 aqi_levels = {
     1: "Good 😊", 
     2: "Fair 🙂", 
@@ -46,19 +48,27 @@ aqi_levels = {
 }
 
 aqi_health_info = {
-    1: ["Good", "0–50", "Air quality is considered satisfactory.", "No health problems. Ideal for everyone including sensitive groups."],
-    2: ["Fair", "51–100", "Acceptable air quality.", "Minor irritation possible in very sensitive individuals; may cause mild redness or dryness."],
-    3: ["Moderate", "101–150", "May be unhealthy for sensitive groups.", "Irritation, redness, and dryness in eyes/skin; increased risk of respiratory infections and conjunctivitis."],
-    4: ["Poor", "151–200", "Unhealthy for the general public.", "Respiratory issues, cardiovascular strain, irritation, and increased risk of neurological disorders."],
-    5: ["Very Poor", "201–300+", "Very unhealthy air quality.", "Severe health risks including lung damage, heart problems, neurological effects, and certain cancers. Avoid outdoor exposure."]
+    1: ["Good", "0–50", "Air quality is considered satisfactory.", 
+        "No health problems. Ideal for everyone including sensitive groups."],
+    2: ["Fair", "51–100", "Acceptable air quality.", 
+        "Minor irritation possible in very sensitive individuals."],
+    3: ["Moderate", "101–150", "May be unhealthy for sensitive groups.", 
+        "Irritation, redness, and dryness in eyes/skin; possible respiratory infections."],
+    4: ["Poor", "151–200", "Unhealthy for the general public.", 
+        "Respiratory and cardiovascular issues likely."],
+    5: ["Very Poor", "201–300+", "Very unhealthy air quality.", 
+        "Severe health risks — avoid outdoor exposure."]
 }
 
+# Location Input
 location = st.text_input("Enter a location (e.g., Delhi, India):")
 
+# When user clicks "Get Report"
 if st.button("Get Report"):
     if not location.strip():
-        st.warning("Please enter a location.")
+        st.warning("⚠️ Please enter a valid location.")
     else:
+        # Fetch latitude and longitude
         geo_url = f"http://api.openweathermap.org/geo/1.0/direct?q={location}&limit=1&appid={API_KEY}"
         geo_res = requests.get(geo_url).json()
 
@@ -67,9 +77,10 @@ if st.button("Get Report"):
             lon = geo_res[0]['lon']
             st.success(f"📍 Location: {location} → Lat: {lat}, Lon: {lon}")
 
-            # Weather section
+            # Weather Data
             weather_url = f"http://api.openweathermap.org/data/2.5/weather?q={location}&appid={API_KEY}&units=metric"
             weather_res = requests.get(weather_url).json()
+
             if weather_res.get("cod") == 200:
                 st.header("🌦️ Current Weather")
                 st.write(f"🌡️ Temperature: {weather_res['main']['temp']} °C")
@@ -77,14 +88,16 @@ if st.button("Get Report"):
                 st.write(f"🌬️ Wind Speed: {weather_res['wind']['speed']} m/s")
                 st.write(f"☁️ Condition: {weather_res['weather'][0]['description'].capitalize()}")
 
+            # Air Quality Data
             air_url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={API_KEY}"
             air_res = requests.get(air_url).json()
+
             if "list" in air_res:
                 st.header("🧪 Air Quality Index (AQI)")
                 aqi = air_res['list'][0]['main']['aqi']
                 st.write(f"**AQI Level:** {aqi} → {aqi_levels.get(aqi, 'Unknown')}")
 
-                # AQI Description
+                # AQI Category Table
                 if aqi in aqi_health_info:
                     cat, rng, desc, health = aqi_health_info[aqi]
                     st.subheader("🦾 AQI Category Health Info")
@@ -116,7 +129,7 @@ if st.button("Get Report"):
                     </table>
                     """, unsafe_allow_html=True)
 
-                # Health Risk Table with Full Names
+                # Pollutant Table
                 components = air_res['list'][0]['components']
                 rows = []
                 for comp in ideal_values:
@@ -137,18 +150,23 @@ if st.button("Get Report"):
                 st.header("📊 Health Risk Analysis Table")
                 st.dataframe(df.style.set_properties(**{'text-align': 'left'}), use_container_width=True)
 
-                # Bar Chart with Full Names
+                # Visualization
                 st.markdown("### 📉 Real-Time Pollutant Concentration Graph")
                 chart_df = pd.DataFrame({
                     'Pollutant': [full_names[comp] for comp in ideal_values.keys()],
                     'Concentration (µg/m³)': [components.get(comp, 0) for comp in ideal_values.keys()]
                 })
-                fig = px.bar(chart_df, x='Pollutant', y='Concentration (µg/m³)', 
-                             title='Air Pollutant Levels in Real-Time',
-                             color='Concentration (µg/m³)',
-                             color_continuous_scale='RdYlGn_r',
-                             height=400)
+                fig = px.bar(
+                    chart_df,
+                    x='Pollutant',
+                    y='Concentration (µg/m³)',
+                    title='Air Pollutant Levels in Real-Time',
+                    color='Concentration (µg/m³)',
+                    color_continuous_scale='RdYlGn_r',
+                    height=400
+                )
                 fig.update_layout(xaxis_title="Pollutant", yaxis_title="µg/m³")
                 st.plotly_chart(fig, use_container_width=True)
+
         else:
             st.error("❌ Location not found. Try again.")
